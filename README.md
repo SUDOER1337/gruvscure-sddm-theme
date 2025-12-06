@@ -48,7 +48,23 @@ A minimal yet customizable SDDM theme that uses IPA (International Phonetic Alph
 
 ### Using Package Managers
 
-Coming soon...
+#### Arch Linux (AUR)
+
+Install using your preferred AUR helper:
+
+```bash
+# Using yay
+yay -S sddm-theme-obscure-git
+
+# Using paru
+paru -S sddm-theme-obscure-git
+```
+
+Then set the theme:
+
+```bash
+sudo sh -c 'printf "[Theme]\nCurrent=obscure\n" > /etc/sddm.conf'
+```
 
 ## Configuration
 
@@ -58,46 +74,51 @@ All customization lives in `theme.conf`. Settings are grouped just like in the f
 
 ### Palette
 
-| Key | Description | Default |
-| --- | --- | --- |
-| `textColor` | Primary foreground/text color | `#cdd6f4` |
-| `errorColor` | Accent used for error flashes | `#f38ba8` |
+| Key               | Description                      | Default   |
+| ----------------- | -------------------------------- | --------- |
+| `textColor`       | Primary foreground/text color    | `#cdd6f4` |
+| `errorColor`      | Accent used for error flashes    | `#f38ba8` |
 | `backgroundColor` | Base fill behind the glass layer | `#1e1e2e` |
 
 ### Background
 
-| Key | Description | Default |
-| --- | --- | --- |
-| `backgroundImage` | Path to an optional wallpaper (leave empty for solid color) | _(empty)_ |
-| `backgroundFillMode` | Image sizing mode (`aspectCrop`, `aspectFit`, `stretch`, `tile`, `center`) | `aspectCrop` |
-| `backgroundOpacity` | Opacity of the background image layer | `1` |
-| `backgroundGlassEnabled` | Enable the Gaussian blur glass treatment | `false` |
-| `backgroundGlassIntensity` | Blur strength (0–64) | `64` |
-| `backgroundTintColor` | Base tint color placed over the wallpaper | `#11111b` |
-| `backgroundTintIntensity` | Tint opacity (0–1) | `0` |
+| Key                        | Description                                                                | Default      |
+| -------------------------- | -------------------------------------------------------------------------- | ------------ |
+| `backgroundImage`          | Path to an optional wallpaper (leave empty for solid color)                | _(empty)_    |
+| `backgroundFillMode`       | Image sizing mode (`aspectCrop`, `aspectFit`, `stretch`, `tile`, `center`) | `aspectCrop` |
+| `backgroundOpacity`        | Opacity of the background image layer (0–100)                              | `100`        |
+| `backgroundGlassEnabled`   | Enable the Gaussian blur glass treatment                                   | `false`      |
+| `backgroundGlassIntensity` | Blur strength (0–100)                                                      | `50`         |
+| `backgroundTintColor`      | Base tint color placed over the wallpaper                                  | `#11111b`    |
+| `backgroundTintIntensity`  | Tint opacity (0–100)                                                       | `0`          |
 
 ### Typography
 
-| Key | Description | Default |
-| --- | --- | --- |
-| `fontFamily` | UI font family | `Inter` |
-| `baseFontSize` | Base font size in pixels | `15` |
+| Key            | Description              | Default |
+| -------------- | ------------------------ | ------- |
+| `fontFamily`   | UI font family           | `Inter` |
+| `baseFontSize` | Base font size in pixels | `15`    |
 
 ### Controls & Behaviour
 
-| Key | Description | Default |
-| --- | --- | --- |
-| `controlCornerRadius` | Corner radius for inputs, selectors, and power buttons | `30` |
-| `controlAccentColor` | Single accent color driving button fills/borders | `#89b4fa` |
-| `controlOpacity` | Base opacity controlling control fill/border strength | `0.3` |
-| `allowEmptyPassword` | Permit logging in without a password | `false` |
-| `showUserSelector` | Show user selection carousel by default | `false` |
-| `showSessionSelector` | Show session selection carousel by default | `false` |
-| `randomizePasswordMask` | Shuffle IPA mask characters each keystroke | `true` |
-| `animationDuration` | Base animation length in milliseconds | `320` |
-| `passwordFlashLoops` | How many times the password field flashes on error | `3` |
-| `passwordFlashOnDuration` | Duration of each flash highlight (ms) | `200` |
-| `passwordFlashOffDuration` | Duration of the fade-out between flashes (ms) | `260` |
+| Key                        | Description                                                   | Default   |
+| -------------------------- | ------------------------------------------------------------- | --------- |
+| `controlCornerRadius`      | Corner radius for inputs, selectors, and power buttons        | `30`      |
+| `controlOpacity`           | Base opacity controlling control fill/border strength (0–100) | `30`      |
+| `controlBlurEnabled`       | Enable blur effect behind controls                            | `false`   |
+| `controlBlurIntensity`     | Control blur strength (0–100)                                 | `50`      |
+| `controlAccentColor`       | Single accent color driving button fills/borders              | `#89b4fa` |
+| `allowEmptyPassword`       | Permit logging in without a password                          | `false`   |
+| `showUserSelector`         | Show user selection carousel by default                       | `false`   |
+| `showSessionSelector`      | Show session selection carousel by default                    | `false`   |
+| `useIpaMask`               | Use IPA characters for password masking (false = simple mask) | `true`    |
+| `simpleMaskChar`           | Character used for masking when IPA is disabled               | `●`       |
+| `randomizePasswordMask`    | Shuffle IPA mask characters each keystroke                    | `true`    |
+| `autoFocusPassword`        | Auto-focus password field on theme load                       | `false`   |
+| `animationDuration`        | Base animation length in milliseconds                         | `320`     |
+| `passwordFlashLoops`       | How many times the password field flashes on error            | `3`       |
+| `passwordFlashOnDuration`  | Duration of each flash highlight (ms)                         | `200`     |
+| `passwordFlashOffDuration` | Duration of the fade-out between flashes (ms)                 | `260`     |
 
 The password visibility toggle honours all these settings automatically—no extra configuration required.
 

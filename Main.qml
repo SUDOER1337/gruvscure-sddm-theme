@@ -49,8 +49,10 @@ Rectangle {
             if (typeof value === "boolean") {
                 return value
             }
-            if (typeof value === "string") {
-                const lowered = value.toLowerCase()
+            // Fallback to string parsing with comment stripping
+            const strValue = stringValue(key, "")
+            if (strValue) {
+                const lowered = strValue.toLowerCase()
                 if (lowered === "true") return true
                 if (lowered === "false") return false
             }
@@ -97,18 +99,22 @@ Rectangle {
         readonly property color error: configUtil.colorValue("errorColor", "#ff4444")
         readonly property color background: configUtil.colorValue("backgroundColor", "#000000")
         readonly property color accent: configUtil.colorValue("controlAccentColor", Qt.rgba(text.r, text.g, text.b, 0.8))
-        readonly property real baseOpacity: configUtil.realValue("controlOpacity", 0.24, 0.0, 1.0)
+        readonly property real baseOpacity: configUtil.realValue("controlOpacity", 24, 0, 100) / 100
 
         function applyAlpha(colorValue, alpha) {
             return Qt.rgba(colorValue.r, colorValue.g, colorValue.b, Math.min(1, Math.max(0, alpha)))
         }
 
-        readonly property color fillBase: applyAlpha(accent, baseOpacity)
-        readonly property color fillHover: applyAlpha(accent, baseOpacity + 0.08)
-        readonly property color fillFocus: applyAlpha(accent, baseOpacity + 0.14)
-        readonly property color fillPressed: applyAlpha(accent, baseOpacity + 0.20)
+        readonly property color fillBase: blurEnabled ? "transparent" : applyAlpha(accent, baseOpacity)
+        readonly property color fillHover: blurEnabled ? "transparent" : applyAlpha(accent, baseOpacity + 0.08)
+        readonly property color fillFocus: blurEnabled ? "transparent" : applyAlpha(accent, baseOpacity + 0.14)
+        readonly property color fillPressed: blurEnabled ? "transparent" : applyAlpha(accent, baseOpacity + 0.20)
         readonly property color borderBase: applyAlpha(accent, baseOpacity + 0.06)
         readonly property color borderActive: applyAlpha(accent, baseOpacity + 0.32)
+
+        readonly property bool blurEnabled: configUtil.boolValue("controlBlurEnabled", false)
+        readonly property real blurIntensity: configUtil.realValue("controlBlurIntensity", 50, 0, 100)
+        readonly property real blurRadius: blurEnabled ? configUtil.clamp(Math.round((blurIntensity / 100) * 24), 0, 24) : 0
     }
 
     QtObject {
@@ -116,9 +122,9 @@ Rectangle {
 
         readonly property bool glassEnabled: configUtil.boolValue("backgroundGlassEnabled", false)
         readonly property real blurIntensity: configUtil.realValue("backgroundGlassIntensity", 50, 0, 100)
-        readonly property real blurRadius: glassEnabled ? configUtil.clamp(Math.round(16 + (blurIntensity / 100) * 48), 0, 64) : 0
+        readonly property real blurRadius: glassEnabled ? configUtil.clamp(Math.round((blurIntensity / 100) * 32), 0, 32) : 0
         readonly property color tintBase: configUtil.colorValue("backgroundTintColor", Qt.rgba(0, 0, 0, 1))
-        readonly property real tintOpacity: configUtil.realValue("backgroundTintIntensity", 0.0, 0.0, 1.0)
+        readonly property real tintOpacity: configUtil.realValue("backgroundTintIntensity", 0, 0, 100) / 100
         readonly property color tint: Qt.rgba(tintBase.r, tintBase.g, tintBase.b, Math.min(1, Math.max(0, tintOpacity)))
         readonly property bool hasTint: tint.a > 0.001
 
@@ -195,7 +201,7 @@ Rectangle {
             return centered
         }
 
-        function compute(passwordText, capacity, revealPlainText, randomize) {
+        function compute(passwordText, capacity, revealPlainText, randomize, useIpa) {
             const textLength = passwordText.length
             const maskLength = Math.min(textLength, capacity)
 
@@ -213,6 +219,18 @@ Rectangle {
                     reset()
                 }
                 return centerMask(visibleTail, capacity)
+            }
+
+            // Simple mask mode: use ✱ character
+            if (!useIpa) {
+                var simpleMask = ""
+                for (var simpleIndex = 0; simpleIndex < maskLength; ++simpleIndex) {
+                    simpleMask += root.simpleMaskChar
+                }
+                if (textLength === 0) {
+                    reset()
+                }
+                return centerMask(simpleMask, capacity)
             }
 
             if (randomize) {
@@ -267,7 +285,7 @@ Rectangle {
     readonly property int sessionsFontSize: configUtil.intValue("sessionsFontSize", 24, 14, 64)
     readonly property int animationDuration: configUtil.intValue("animationDuration", 300, 0, 5000)
 
-    readonly property real backgroundOpacity: configUtil.realValue("backgroundOpacity", 0.8, 0, 1)
+    readonly property real backgroundOpacity: configUtil.realValue("backgroundOpacity", 100, 0, 100) / 100
     readonly property bool backgroundGlassEnabled: backgroundTokens.glassEnabled
     readonly property real backgroundGlassRadius: backgroundTokens.blurRadius
     readonly property color backgroundTintColor: backgroundTokens.tint
@@ -278,8 +296,11 @@ Rectangle {
     readonly property int passwordFlashOnDuration: Math.max(30, configUtil.intValue("passwordFlashOnDuration", 160, 20, 1000))
     readonly property int passwordFlashOffDuration: Math.max(30, configUtil.intValue("passwordFlashOffDuration", 220, 20, 1000))
     readonly property bool randomizePasswordMask: configUtil.boolValue("randomizePasswordMask", false)
+    readonly property bool useIpaMask: configUtil.boolValue("useIpaMask", true)
+    readonly property string simpleMaskChar: configUtil.stringValue("simpleMaskChar", "✱").charAt(0) || "✱"
     readonly property bool allowEmptyPassword: configUtil.boolValue("allowEmptyPassword", false)
     readonly property bool showUserRealName: configUtil.boolValue("showUserRealName", false)
+    readonly property bool autoFocusPassword: configUtil.boolValue("autoFocusPassword", true)
 
     readonly property var ipaChars: [
         "ɐ", "ɑ", "ɒ", "æ", "ɓ", "ʙ", "β", "ɔ", "ɕ", "ç", "ɗ", "ɖ", "ð", "ʤ", "ə", "ɘ",
@@ -368,13 +389,16 @@ Rectangle {
             }
         }
 
-        FastBlur {
+        GaussianBlur {
+            id: blurredBackground
             anchors.fill: backgroundImage
             source: backgroundImage
             radius: backgroundGlassRadius
-            transparentBorder: true
+            samples: Math.min(Math.max(1, Math.round(backgroundGlassRadius * 2 + 1)), 33)
+            deviation: Math.max(1, backgroundGlassRadius / 3)
             visible: isGlassBackgroundActive && backgroundImage.status === Image.Ready
             opacity: backgroundOpacity
+            cached: true
         }
 
         Rectangle {
@@ -382,6 +406,18 @@ Rectangle {
             visible: hasBackgroundTint
             color: backgroundTintColor
         }
+    }
+
+    // Blurred background layer for controls (only rendered when control blur is enabled)
+    GaussianBlur {
+        id: controlBlurredBackground
+        anchors.fill: parent
+        source: backgroundImage
+        radius: palette.blurRadius
+        samples: Math.min(Math.max(1, Math.round(palette.blurRadius * 2 + 1)), 33)
+        deviation: Math.max(1, palette.blurRadius / 3)
+        visible: palette.blurEnabled && palette.blurRadius > 0
+        opacity: 0  // Rendered but invisible - used as source for ShaderEffectSource
     }
 
     // ---------------------------------------------------------------------
@@ -425,6 +461,39 @@ Rectangle {
 
         implicitHeight: 56
         width: 0
+
+        // Blur properties for control
+        property bool blurEnabled: false
+        property real blurRadius: 0
+        property var blurSource: null
+
+        // Clipped blur layer - clips from the pre-blurred controlBlurredBackground
+        Item {
+            id: passwordBlurLayer
+            anchors.fill: parent
+            visible: passwordFieldRoot.blurEnabled && palette.blurRadius > 0 && backgroundImage.status === Image.Ready
+            clip: true
+
+            ShaderEffectSource {
+                id: passwordBlurSource
+                anchors.fill: parent
+                sourceItem: controlBlurredBackground
+                live: false
+                sourceRect: {
+                    var globalPos = passwordFieldRoot.mapToItem(root, 0, 0)
+                    return Qt.rect(globalPos.x, globalPos.y, passwordFieldRoot.width, passwordFieldRoot.height)
+                }
+
+                layer.enabled: true
+                layer.effect: OpacityMask {
+                    maskSource: Rectangle {
+                        width: passwordBlurLayer.width
+                        height: passwordBlurLayer.height
+                        radius: cornerRadius
+                    }
+                }
+            }
+        }
 
         Rectangle {
             id: passwordContainer
@@ -591,41 +660,77 @@ Rectangle {
         }
     }
 
-    component SelectorButton: Rectangle {
+    component SelectorButton: Item {
         id: selectorButton
 
         property string displayText: "‹"
+        property bool blurEnabled: false
+        property real blurRadius: 0
+        property var blurSource: null
         signal activated()
 
         width: 34
         height: 34
-        radius: width / 2
-        color: selectorMouseArea.pressed
-            ? controlFillPressed
-            : selectorMouseArea.containsMouse
-                ? controlFillHover
-                : controlFillBase
-        border.color: selectorMouseArea.containsMouse ? controlBorderActive : controlBorderBase
-        border.width: 1
-        antialiasing: true
 
-        Behavior on color { ColorAnimation { duration: 150 } }
+        // Clipped blur layer
+        Item {
+            id: selectorBlurLayer
+            anchors.fill: parent
+            visible: selectorButton.blurEnabled && palette.blurRadius > 0 && backgroundImage.status === Image.Ready
+            clip: true
 
-        Text {
-            anchors.centerIn: parent
-            anchors.verticalCenterOffset: -2
-            text: selectorButton.displayText
-            color: textColor
-            font.family: root.fontFamily
-            font.pointSize: root.baseFontSize + 2
+            ShaderEffectSource {
+                id: selectorBlurSource
+                anchors.fill: parent
+                sourceItem: controlBlurredBackground
+                live: false
+                sourceRect: {
+                    var globalPos = selectorButton.mapToItem(root, 0, 0)
+                    return Qt.rect(globalPos.x, globalPos.y, selectorButton.width, selectorButton.height)
+                }
+
+                layer.enabled: true
+                layer.effect: OpacityMask {
+                    maskSource: Rectangle {
+                        width: selectorBlurLayer.width
+                        height: selectorBlurLayer.height
+                        radius: selectorBlurLayer.width / 2
+                    }
+                }
+            }
         }
 
-        MouseArea {
-            id: selectorMouseArea
+        Rectangle {
+            id: selectorButtonRect
             anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: selectorButton.activated()
+            radius: width / 2
+            color: selectorMouseArea.pressed
+                ? controlFillPressed
+                : selectorMouseArea.containsMouse
+                    ? controlFillHover
+                    : controlFillBase
+            border.color: selectorMouseArea.containsMouse ? controlBorderActive : controlBorderBase
+            border.width: 1
+            antialiasing: true
+
+            Behavior on color { ColorAnimation { duration: 150 } }
+
+            Text {
+                anchors.centerIn: parent
+                anchors.verticalCenterOffset: -2
+                text: selectorButton.displayText
+                color: textColor
+                font.family: root.fontFamily
+                font.pointSize: root.baseFontSize + 2
+            }
+
+            MouseArea {
+                id: selectorMouseArea
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: selectorButton.activated()
+            }
         }
     }
 
@@ -637,6 +742,11 @@ Rectangle {
         property string nextText: "›"
         property int fontPointSize: baseFontSize + 2
         property string fontFamily: root.fontFamily
+
+        // Blur properties
+        property bool blurEnabled: false
+        property real blurRadius: 0
+        property var blurSource: null
 
         signal prevClicked()
         signal nextClicked()
@@ -668,6 +778,9 @@ Rectangle {
             anchors.leftMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             displayText: baseSelector.prevText
+            blurEnabled: baseSelector.blurEnabled
+            blurRadius: baseSelector.blurRadius
+            blurSource: baseSelector.blurSource
             onActivated: baseSelector.prevClicked()
         }
 
@@ -676,6 +789,9 @@ Rectangle {
             anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             displayText: baseSelector.nextText
+            blurEnabled: baseSelector.blurEnabled
+            blurRadius: baseSelector.blurRadius
+            blurSource: baseSelector.blurSource
             onActivated: baseSelector.nextClicked()
         }
     }
@@ -694,53 +810,89 @@ Rectangle {
         fontPointSize: sessionsFontSize
     }
 
-    component PowerButton: Rectangle {
+    component PowerButton: Item {
         id: powerButton
         property string iconSource: ""
         property string tooltip: ""
+        property bool blurEnabled: false
+        property real blurRadius: 0
+        property var blurSource: null
         signal clicked()
 
         width: 48
         height: 48
-        radius: controlCornerRadius
 
-        color: mouseArea.pressed
-            ? controlFillPressed
-            : mouseArea.containsMouse
-                ? controlFillHover
-                : controlFillBase
-
-        border.color: mouseArea.pressed || mouseArea.containsMouse
-            ? controlBorderActive
-            : controlBorderBase
-        border.width: 1
-
-        Behavior on color { ColorAnimation { duration: 150 } }
-
-        Image {
-            id: powerIcon
-            anchors.centerIn: parent
-            source: iconSource
-            sourceSize: Qt.size(26, 26)
-            fillMode: Image.PreserveAspectFit
-            smooth: true
-            antialiasing: true
-            visible: false
-        }
-
-        ColorOverlay {
-            anchors.fill: powerIcon
-            source: powerIcon
-            color: textColor
-        }
-
-        MouseArea {
-            id: mouseArea
+        // Clipped blur layer
+        Item {
+            id: powerBlurLayer
             anchors.fill: parent
-            hoverEnabled: true
-            acceptedButtons: Qt.LeftButton
-            cursorShape: Qt.PointingHandCursor
-            onClicked: powerButton.clicked()
+            visible: powerButton.blurEnabled && palette.blurRadius > 0 && backgroundImage.status === Image.Ready
+            clip: true
+
+            ShaderEffectSource {
+                id: powerBlurSource
+                anchors.fill: parent
+                sourceItem: controlBlurredBackground
+                live: false
+                sourceRect: {
+                    var globalPos = powerButton.mapToItem(root, 0, 0)
+                    return Qt.rect(globalPos.x, globalPos.y, powerButton.width, powerButton.height)
+                }
+
+                layer.enabled: true
+                layer.effect: OpacityMask {
+                    maskSource: Rectangle {
+                        width: powerBlurLayer.width
+                        height: powerBlurLayer.height
+                        radius: controlCornerRadius
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            id: powerButtonRect
+            anchors.fill: parent
+            radius: controlCornerRadius
+
+            color: mouseArea.pressed
+                ? controlFillPressed
+                : mouseArea.containsMouse
+                    ? controlFillHover
+                    : controlFillBase
+
+            border.color: mouseArea.pressed || mouseArea.containsMouse
+                ? controlBorderActive
+                : controlBorderBase
+            border.width: 1
+
+            Behavior on color { ColorAnimation { duration: 150 } }
+
+            Image {
+                id: powerIcon
+                anchors.centerIn: parent
+                source: powerButton.iconSource
+                sourceSize: Qt.size(26, 26)
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+                antialiasing: true
+                visible: false
+            }
+
+            ColorOverlay {
+                anchors.fill: powerIcon
+                source: powerIcon
+                color: textColor
+            }
+
+            MouseArea {
+                id: mouseArea
+                anchors.fill: parent
+                hoverEnabled: true
+                acceptedButtons: Qt.LeftButton
+                cursorShape: Qt.PointingHandCursor
+                onClicked: powerButton.clicked()
+            }
         }
     }
 
@@ -766,6 +918,9 @@ Rectangle {
                 height: 40
                 fontFamily: root.fontFamily
                 fontPointSize: root.baseFontSize + 2
+                blurEnabled: palette.blurEnabled
+                blurRadius: palette.blurRadius
+                blurSource: backgroundLayer
             }
 
             PasswordField {
@@ -788,6 +943,9 @@ Rectangle {
                 passwordFlashLoops: root.passwordFlashLoops
                 passwordFlashOnDuration: root.passwordFlashOnDuration
                 passwordFlashOffDuration: root.passwordFlashOffDuration
+                blurEnabled: palette.blurEnabled
+                blurRadius: palette.blurRadius
+                blurSource: backgroundLayer
 
                 onVisibilityToggled: togglePasswordVisibility()
                 onPasswordChanged: {
@@ -826,6 +984,9 @@ Rectangle {
                 height: 40
                 fontFamily: root.fontFamily
                 fontPointSize: root.baseFontSize + 2
+                blurEnabled: palette.blurEnabled
+                blurRadius: palette.blurRadius
+                blurSource: backgroundLayer
                 onPrevClicked: sessionsCycleSelectPrev()
                 onNextClicked: sessionsCycleSelectNext()
             }
@@ -842,6 +1003,9 @@ Rectangle {
                 visible: sddm.canSuspend
                 iconSource: "./assets/suspend.svg"
                 tooltip: "Suspend"
+                blurEnabled: palette.blurEnabled
+                blurRadius: palette.blurRadius
+                blurSource: backgroundLayer
                 onClicked: sddm.suspend()
             }
 
@@ -849,6 +1013,9 @@ Rectangle {
                 visible: sddm.canReboot
                 iconSource: "./assets/reboot.svg"
                 tooltip: "Reboot"
+                blurEnabled: palette.blurEnabled
+                blurRadius: palette.blurRadius
+                blurSource: backgroundLayer
                 onClicked: sddm.reboot()
             }
 
@@ -856,6 +1023,9 @@ Rectangle {
                 visible: sddm.canPowerOff
                 iconSource: "./assets/shutdown.svg"
                 tooltip: "Shutdown"
+                blurEnabled: palette.blurEnabled
+                blurRadius: palette.blurRadius
+                blurSource: backgroundLayer
                 onClicked: sddm.powerOff()
             }
         }
@@ -931,7 +1101,11 @@ Rectangle {
     Component.onCompleted: {
         validateConfiguration()
         updatePasswordMask()
+        if (autoFocusPassword) {
+            passwordInput.forceActiveFocus()
+        }
         console.log("Theme initialized. Background:", backgroundImage.source)
+        console.log("Mask settings - useIpaMask:", useIpaMask, "simpleMaskChar:", simpleMaskChar)
     }
 
     // ---------------------------------------------------------------------
@@ -1149,7 +1323,9 @@ Rectangle {
             ? passwordInput.anchors.rightMargin
             : 16
         const availableWidth = Math.max(0, passwordContainer.width - (leftMargin + rightMargin))
-        const charWidth = (baseFontSize + 8) * 0.7
+        // Simple mask chars (like ●) are typically wider than IPA chars
+        const charWidthMultiplier = useIpaMask ? 0.7 : 1.0
+        const charWidth = (baseFontSize + 8) * charWidthMultiplier
         const capacity = Math.floor(availableWidth / Math.max(1, charWidth))
         return Math.max(0, capacity)
     }
@@ -1163,7 +1339,8 @@ Rectangle {
                     passwordInput.text || "",
                     maxMaskLength(),
                     passwordVisible,
-                    randomizePasswordMask)
+                    randomizePasswordMask,
+                    useIpaMask)
     }
 
     function togglePasswordVisibility() {
