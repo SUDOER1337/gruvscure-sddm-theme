@@ -1,154 +1,136 @@
-# Obscure SDDM Theme
+# Obscure Gruvbox Boxy SDDM Theme
 
-A minimal yet customizable SDDM theme that uses IPA (International Phonetic Alphabet) characters for password masking, creating an obscure and unique look for your login experience.
+A flat, square, Gruvbox-dark SDDM theme based on [`saatvik333/obscure-sddm-theme`](https://github.com/saatvik333/obscure-sddm-theme).
 
-![demo](https://github.com/user-attachments/assets/f4a04b3e-955f-4936-b195-c92ac4e7cf66)
+This variant removes the rounded glass-heavy look in favor of a more minimal session-manager style:
 
-## Features
-
-- Clean look-and-feel driven by a accent colors and glass tint controls
-- Unique IPA character-based password masking with optional randomized output
-- Built-in password visibility toggle with animated error feedback
-- Customizable background image with blur, tint color, and intensity controls
-- Keyboard-driven user/session selectors styled with circular accent buttons
+- square controls
+- flat fills with no visible borders
+- Gruvbox dark palette
+- optional wallpaper with solid-color fallback
+- simple password masking by default
 
 ## Requirements
 
-- SDDM >= 0.19.0
-- Qt >= 6.0.0
-- A system font that supports IPA characters (default: Inter)
+- SDDM with Qt 6 greeter support
+- `qt6-5compat`
+- a font installed on the target system that matches `fontFamily` in `theme.conf`
 
-## Installation
+## Manual Install
 
-### Manual Installation
-
-1. Clone this repository:
-
-   ```bash
-   git clone https://github.com/saatvik333/obscure-sddm-theme.git
-   ```
-
-2. Install necessary packages
-
-   ```bash
-   yay -S sddm qt6-5compat
-   ```
-
-3. Copy the theme to SDDM themes directory:
-
-   ```bash
-   sudo cp -r obscure-sddm-theme /usr/share/sddm/themes/obscure
-   ```
-
-4. Set the theme in SDDM configuration:
-
-   ```bash
-   sudo sh -c 'printf "[Theme]\nCurrent=obscure\n" > /etc/sddm.conf'
-   ```
-
-### Using Package Managers
-
-#### Arch Linux (AUR)
-
-Install using your preferred AUR helper:
+Clone your fork:
 
 ```bash
-# Using yay
-yay -S sddm-theme-obscure-git
-
-# Using paru
-paru -S sddm-theme-obscure-git
+git clone https://github.com/<your-user>/obscure-gruvbox-boxy-sddm.git
+cd obscure-gruvbox-boxy-sddm
 ```
 
-Then set the theme:
+Preview locally:
 
 ```bash
-sudo sh -c 'printf "[Theme]\nCurrent=obscure\n" > /etc/sddm.conf'
+sddm-greeter-qt6 --test-mode --theme "$PWD"
 ```
+
+If you are testing without an active display server, validate that the theme loads with:
+
+```bash
+QT_QPA_PLATFORM=offscreen sddm-greeter-qt6 --test-mode --theme "$PWD"
+```
+
+Install the theme:
+
+```bash
+sudo mkdir -p /usr/share/sddm/themes/obscure-gruvbox-boxy
+sudo cp -r Main.qml metadata.desktop theme.conf assets /usr/share/sddm/themes/obscure-gruvbox-boxy/
+```
+
+Activate it:
+
+```bash
+sudo mkdir -p /etc/sddm.conf.d
+sudo tee /etc/sddm.conf.d/10-theme.conf >/dev/null <<'EOF'
+[Theme]
+Current=obscure-gruvbox-boxy
+EOF
+```
+
+If SDDM launches an on-screen keyboard and you do not want it, set an empty input method:
+
+```bash
+sudo tee /etc/sddm.conf.d/20-inputmethod.conf >/dev/null <<'EOF'
+[General]
+InputMethod=
+EOF
+```
+
+## Reproducible GitHub Workflow
+
+If this repo started as a local clone of upstream, convert it into your own forked working repo:
+
+```bash
+git remote rename origin upstream
+git remote add origin git@github.com:<your-user>/obscure-gruvbox-boxy-sddm.git
+git push -u origin main
+```
+
+Keep `upstream` only if you want to periodically pull fixes from the original project.
 
 ## Configuration
 
-The theme can be customized through the `theme.conf` file. Here are the available options:
+All user-facing customization lives in `theme.conf`.
 
-All customization lives in `theme.conf`. Settings are grouped just like in the file to keep things easy to reason about.
+### Core Colors
 
-### Palette
+| Key | Description | Default |
+| --- | --- | --- |
+| `backgroundColor` | Full-screen background color behind everything | `#1d2021` |
+| `panelColor` | Main login panel background | `#282828` |
+| `textColor` | Primary text color | `#ebdbb2` |
+| `errorColor` | Error flash color | `#fb4934` |
+| `activeColor` | Accent used for active emphasis | `#d79921` |
 
-| Key               | Description                      | Default   |
-| ----------------- | -------------------------------- | --------- |
-| `textColor`       | Primary foreground/text color    | `#cdd6f4` |
-| `errorColor`      | Accent used for error flashes    | `#f38ba8` |
-| `backgroundColor` | Base fill behind the glass layer | `#1e1e2e` |
+### Control Colors
 
-### Background
+| Key | Description | Default |
+| --- | --- | --- |
+| `controlFillBaseColor` | Default input / selector / button fill | `#32302f` |
+| `controlFillHoverColor` | Hover fill | `#3c3836` |
+| `controlFillFocusColor` | Focused password field fill | `#504945` |
+| `controlFillPressedColor` | Pressed state fill | `#282828` |
 
-| Key                        | Description                                                                | Default      |
-| -------------------------- | -------------------------------------------------------------------------- | ------------ |
-| `backgroundImage`          | Path to an optional wallpaper (leave empty for solid color)                | _(empty)_    |
-| `backgroundFillMode`       | Image sizing mode (`aspectCrop`, `aspectFit`, `stretch`, `tile`, `center`) | `aspectCrop` |
-| `backgroundOpacity`        | Opacity of the background image layer (0–100)                              | `100`        |
-| `backgroundGlassEnabled`   | Enable the Gaussian blur glass treatment                                   | `false`      |
-| `backgroundGlassIntensity` | Blur strength (0–100)                                                      | `50`         |
-| `backgroundTintColor`      | Base tint color placed over the wallpaper                                  | `#11111b`    |
-| `backgroundTintIntensity`  | Tint opacity (0–100)                                                       | `0`          |
+### Behavior
 
-### Typography
+| Key | Description | Default |
+| --- | --- | --- |
+| `fontFamily` | UI font family | `JetBrainsMono Nerd Font` |
+| `baseFontSize` | Base font size in pixels | `14` |
+| `sessionsFontSize` | Session selector font size in pixels | `15` |
+| `controlCornerRadius` | Corner radius for controls and panel | `0` |
+| `showUserSelector` | Show user selector carousel | `false` |
+| `showSessionSelector` | Show session selector | `true` |
+| `autoFocusPassword` | Focus password field on load | `false` |
+| `useIpaMask` | Use upstream IPA masking mode | `false` |
+| `simpleMaskChar` | Mask character when IPA masking is off | `*` |
+| `randomizePasswordMask` | Randomize IPA masking output | `false` |
 
-| Key            | Description              | Default |
-| -------------- | ------------------------ | ------- |
-| `fontFamily`   | UI font family           | `Inter` |
-| `baseFontSize` | Base font size in pixels | `15`    |
+### Background Image
 
-### Controls & Behaviour
+| Key | Description | Default |
+| --- | --- | --- |
+| `backgroundImage` | Optional wallpaper path | _(empty)_ |
+| `backgroundFillMode` | `aspectCrop`, `aspectFit`, `stretch`, `tile`, `center` | `aspectCrop` |
+| `backgroundOpacity` | Wallpaper opacity from 0-100 | `100` |
+| `backgroundGlassEnabled` | Blur the wallpaper layer | `false` |
+| `backgroundGlassIntensity` | Blur intensity from 0-100 | `0` |
+| `backgroundTintColor` | Overlay tint applied on top of wallpaper | `#1d2021` |
+| `backgroundTintIntensity` | Tint opacity from 0-100 | `0` |
 
-| Key                        | Description                                                   | Default   |
-| -------------------------- | ------------------------------------------------------------- | --------- |
-| `controlCornerRadius`      | Corner radius for inputs, selectors, and power buttons        | `30`      |
-| `controlOpacity`           | Base opacity controlling control fill/border strength (0–100) | `30`      |
-| `controlBlurEnabled`       | Enable blur effect behind controls                            | `false`   |
-| `controlBlurIntensity`     | Control blur strength (0–100)                                 | `50`      |
-| `controlAccentColor`       | Single accent color driving button fills/borders              | `#89b4fa` |
-| `allowEmptyPassword`       | Permit logging in without a password                          | `false`   |
-| `showUserSelector`         | Show user selection carousel by default                       | `false`   |
-| `showSessionSelector`      | Show session selection carousel by default                    | `false`   |
-| `useIpaMask`               | Use IPA characters for password masking (false = simple mask) | `true`    |
-| `simpleMaskChar`           | Character used for masking when IPA is disabled               | `●`       |
-| `randomizePasswordMask`    | Shuffle IPA mask characters each keystroke                    | `true`    |
-| `autoFocusPassword`        | Auto-focus password field on theme load                       | `false`   |
-| `animationDuration`        | Base animation length in milliseconds                         | `320`     |
-| `passwordFlashLoops`       | How many times the password field flashes on error            | `3`       |
-| `passwordFlashOnDuration`  | Duration of each flash highlight (ms)                         | `200`     |
-| `passwordFlashOffDuration` | Duration of the fade-out between flashes (ms)                 | `260`     |
+## Notes
 
-The password visibility toggle honours all these settings automatically—no extra configuration required.
-
-## Shortcuts
-
-The theme provides several keyboard shortcuts for quick access to various functions:
-
-- `F1`: Toggle help text display
-- `F2` or `Alt+U`: Toggle user selector
-- `Ctrl+F2` or `Alt+Ctrl+U`: Switch to previous user
-- `F3` or `Alt+S`: Toggle session selector
-- `Ctrl+F3` or `Alt+Ctrl+S`: Switch to previous session
-- `F10`: Suspend system (if available)
-- `F11`: Shutdown system (if available)
-- `F12`: Reboot system (if available)
+- The password masking pipeline is still inherited from upstream, but the default config uses simple `*` masking instead of IPA characters.
+- The theme disables password autofocus by default to reduce accidental virtual-keyboard popups on systems that expose one through SDDM.
+- `Theme-Id` is `obscure-gruvbox-boxy`, so the SDDM install directory and `Current=` value should match that exactly.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Inspired by various SDDM themes in the community
-- IPA characters sourced from standard Unicode specifications
-
-## Support
-
-If you like this theme, consider:
-
-- Starring the repository
-- Reporting bugs
-- Contributing to the code
-- Sharing it with others :)
+This project remains under the MIT License. See [LICENSE](LICENSE).

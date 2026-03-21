@@ -99,18 +99,20 @@ Rectangle {
         readonly property color error: configUtil.colorValue("errorColor", "#ff4444")
         readonly property color background: configUtil.colorValue("backgroundColor", "#000000")
         readonly property color accent: configUtil.colorValue("controlAccentColor", Qt.rgba(text.r, text.g, text.b, 0.8))
+        readonly property color panel: configUtil.colorValue("panelColor", "#282828")
+        readonly property color active: configUtil.colorValue("activeColor", "#d79921")
+        readonly property color fillBaseConfig: configUtil.colorValue("controlFillBaseColor", panel)
+        readonly property color fillHoverConfig: configUtil.colorValue("controlFillHoverColor", Qt.lighter(fillBaseConfig, 1.12))
+        readonly property color fillFocusConfig: configUtil.colorValue("controlFillFocusColor", Qt.lighter(fillBaseConfig, 1.22))
+        readonly property color fillPressedConfig: configUtil.colorValue("controlFillPressedColor", Qt.darker(fillBaseConfig, 1.08))
+
         readonly property real baseOpacity: configUtil.realValue("controlOpacity", 24, 0, 100) / 100
-
-        function applyAlpha(colorValue, alpha) {
-            return Qt.rgba(colorValue.r, colorValue.g, colorValue.b, Math.min(1, Math.max(0, alpha)))
-        }
-
-        readonly property color fillBase: blurEnabled ? "transparent" : applyAlpha(accent, baseOpacity)
-        readonly property color fillHover: blurEnabled ? "transparent" : applyAlpha(accent, baseOpacity + 0.08)
-        readonly property color fillFocus: blurEnabled ? "transparent" : applyAlpha(accent, baseOpacity + 0.14)
-        readonly property color fillPressed: blurEnabled ? "transparent" : applyAlpha(accent, baseOpacity + 0.20)
-        readonly property color borderBase: applyAlpha(accent, baseOpacity + 0.06)
-        readonly property color borderActive: applyAlpha(accent, baseOpacity + 0.32)
+        readonly property color fillBase: blurEnabled ? "transparent" : fillBaseConfig
+        readonly property color fillHover: blurEnabled ? "transparent" : fillHoverConfig
+        readonly property color fillFocus: blurEnabled ? "transparent" : fillFocusConfig
+        readonly property color fillPressed: blurEnabled ? "transparent" : fillPressedConfig
+        readonly property color borderBase: "transparent"
+        readonly property color borderActive: active
 
         readonly property bool blurEnabled: configUtil.boolValue("controlBlurEnabled", false)
         readonly property real blurIntensity: configUtil.realValue("controlBlurIntensity", 50, 0, 100)
@@ -279,6 +281,8 @@ Rectangle {
     readonly property color controlFillPressed: palette.fillPressed
     readonly property color controlBorderBase: palette.borderBase
     readonly property color controlBorderActive: palette.borderActive
+    readonly property color panelColor: palette.panel
+    readonly property color activeColor: palette.active
 
     readonly property string fontFamily: configUtil.stringValue("fontFamily", "Inter")
     readonly property int baseFontSize: configUtil.intValue("baseFontSize", 14, 12, 18)
@@ -489,7 +493,7 @@ Rectangle {
                     maskSource: Rectangle {
                         width: passwordBlurLayer.width
                         height: passwordBlurLayer.height
-                        radius: cornerRadius
+                        radius: 0
                     }
                 }
             }
@@ -504,18 +508,16 @@ Rectangle {
                 : passwordMouseArea.containsMouse
                     ? accentFillHover
                     : accentFillBase
-            border.color: passwordInput.activeFocus ? accentBorderActive : accentBorderBase
-            border.width: 1
-            antialiasing: true
+            border.width: 0
+            antialiasing: false
 
             Behavior on color { ColorAnimation { duration: 150 } }
-            Behavior on border.color { ColorAnimation { duration: 200 } }
 
             Rectangle {
                 id: passwordToggleButton
                 width: 36
                 height: 36
-                radius: width / 2
+                radius: 0
                 anchors.right: parent.right
                 anchors.rightMargin: 12
                 anchors.verticalCenter: parent.verticalCenter
@@ -526,11 +528,8 @@ Rectangle {
                         : toggleMouse.containsMouse
                             ? accentFillHover
                             : accentFillBase
-                border.color: (passwordFieldRoot.passwordVisible || toggleMouse.containsMouse)
-                    ? accentBorderActive
-                    : accentBorderBase
-                border.width: 1
-                antialiasing: true
+                border.width: 0
+                antialiasing: false
                 z: 3
 
                 Behavior on color { ColorAnimation { duration: 150 } }
@@ -575,6 +574,7 @@ Rectangle {
                 font.pixelSize: passwordFieldRoot.fontPixelSize
                 color: "transparent"
                 echoMode: TextInput.NoEcho
+                inputMethodHints: Qt.ImhHiddenText | Qt.ImhSensitiveData | Qt.ImhNoPredictiveText
                 selectByMouse: false
                 selectionColor: "transparent"
                 selectedTextColor: "transparent"
@@ -619,9 +619,8 @@ Rectangle {
                 id: passwordErrorOverlay
                 anchors.fill: parent
                 radius: cornerRadius
-                border.color: passwordFieldRoot.errorColor
-                border.width: 2
-                color: "transparent"
+                border.width: 0
+                color: Qt.rgba(passwordFieldRoot.errorColor.r, passwordFieldRoot.errorColor.g, passwordFieldRoot.errorColor.b, 0.22)
                 opacity: 0
                 visible: opacity > 0
                 z: 1
@@ -694,7 +693,7 @@ Rectangle {
                     maskSource: Rectangle {
                         width: selectorBlurLayer.width
                         height: selectorBlurLayer.height
-                        radius: selectorBlurLayer.width / 2
+                        radius: 0
                     }
                 }
             }
@@ -703,15 +702,14 @@ Rectangle {
         Rectangle {
             id: selectorButtonRect
             anchors.fill: parent
-            radius: width / 2
+            radius: 0
             color: selectorMouseArea.pressed
                 ? controlFillPressed
                 : selectorMouseArea.containsMouse
                     ? controlFillHover
                     : controlFillBase
-            border.color: selectorMouseArea.containsMouse ? controlBorderActive : controlBorderBase
-            border.width: 1
-            antialiasing: true
+            border.width: 0
+            antialiasing: false
 
             Behavior on color { ColorAnimation { duration: 150 } }
 
@@ -757,8 +755,7 @@ Rectangle {
         Rectangle {
             anchors.fill: parent
             color: "transparent"
-            radius: 8
-            border.color: Qt.rgba(1, 1, 1, 0.1)
+            radius: 0
             border.width: 0
         }
 
@@ -844,7 +841,7 @@ Rectangle {
                     maskSource: Rectangle {
                         width: powerBlurLayer.width
                         height: powerBlurLayer.height
-                        radius: controlCornerRadius
+                        radius: 0
                     }
                 }
             }
@@ -853,7 +850,7 @@ Rectangle {
         Rectangle {
             id: powerButtonRect
             anchors.fill: parent
-            radius: controlCornerRadius
+            radius: 0
 
             color: mouseArea.pressed
                 ? controlFillPressed
@@ -861,10 +858,8 @@ Rectangle {
                     ? controlFillHover
                     : controlFillBase
 
-            border.color: mouseArea.pressed || mouseArea.containsMouse
-                ? controlBorderActive
-                : controlBorderBase
-            border.width: 1
+            border.width: 0
+            antialiasing: false
 
             Behavior on color { ColorAnimation { duration: 150 } }
 
@@ -903,92 +898,115 @@ Rectangle {
         id: mainContent
         anchors.fill: parent
 
-        Column {
-            id: loginColumn
-            width: Math.min(400, parent.width * 0.7)
+        Rectangle {
+            id: loginPanel
+            width: Math.min(440, parent.width * 0.78)
             anchors.centerIn: parent
-            spacing: 28
+            color: panelColor
+            radius: 0
+            border.width: 0
+            antialiasing: false
 
-            UserSelector {
-                id: userSelector
-                visible: userSelectorVisible
-                width: parent.width
-                currentUser: currentUsername
-                onUserChanged: cycleUser(direction)
-                height: 40
-                fontFamily: root.fontFamily
-                fontPointSize: root.baseFontSize + 2
-                blurEnabled: palette.blurEnabled
-                blurRadius: palette.blurRadius
-                blurSource: backgroundLayer
-            }
+            implicitHeight: loginColumn.implicitHeight + 56
 
-            PasswordField {
-                id: passwordField
-                width: parent.width
-                textColor: root.textColor
-                accentFillBase: controlFillBase
-                accentFillHover: controlFillHover
-                accentFillFocus: controlFillFocus
-                accentFillPressed: controlFillPressed
-                accentBorderBase: controlBorderBase
-                accentBorderActive: controlBorderActive
-                fontFamily: root.fontFamily
-                fontPixelSize: root.baseFontSize + 8
-                cornerRadius: controlCornerRadius
-                passwordVisible: root.passwordVisible
-                passwordMask: root.passwordMask
-                isBusy: root.isLoginInProgress
-                errorColor: root.errorColor
-                passwordFlashLoops: root.passwordFlashLoops
-                passwordFlashOnDuration: root.passwordFlashOnDuration
-                passwordFlashOffDuration: root.passwordFlashOffDuration
-                blurEnabled: palette.blurEnabled
-                blurRadius: palette.blurRadius
-                blurSource: backgroundLayer
+            Column {
+                id: loginColumn
+                width: parent.width - 48
+                anchors.centerIn: parent
+                spacing: 16
 
-                onVisibilityToggled: togglePasswordVisibility()
-                onPasswordChanged: {
-                    if (loginFailed) {
-                        clearError()
+                Text {
+                    width: parent.width
+                    text: currentUsername
+                    color: textColor
+                    font.family: fontFamily
+                    font.pixelSize: baseFontSize + 4
+                    font.bold: true
+                    horizontalAlignment: Text.AlignLeft
+                    visible: currentUsername.length > 0
+                }
+
+                UserSelector {
+                    id: userSelector
+                    visible: userSelectorVisible
+                    width: parent.width
+                    currentUser: currentUsername
+                    onUserChanged: cycleUser(direction)
+                    height: 40
+                    fontFamily: root.fontFamily
+                    fontPointSize: root.baseFontSize + 1
+                    blurEnabled: palette.blurEnabled
+                    blurRadius: palette.blurRadius
+                    blurSource: backgroundLayer
+                }
+
+                PasswordField {
+                    id: passwordField
+                    width: parent.width
+                    textColor: root.textColor
+                    accentFillBase: controlFillBase
+                    accentFillHover: controlFillHover
+                    accentFillFocus: controlFillFocus
+                    accentFillPressed: controlFillPressed
+                    accentBorderBase: controlBorderBase
+                    accentBorderActive: controlBorderActive
+                    fontFamily: root.fontFamily
+                    fontPixelSize: root.baseFontSize + 6
+                    cornerRadius: controlCornerRadius
+                    passwordVisible: root.passwordVisible
+                    passwordMask: root.passwordMask
+                    isBusy: root.isLoginInProgress
+                    errorColor: root.errorColor
+                    passwordFlashLoops: root.passwordFlashLoops
+                    passwordFlashOnDuration: root.passwordFlashOnDuration
+                    passwordFlashOffDuration: root.passwordFlashOffDuration
+                    blurEnabled: palette.blurEnabled
+                    blurRadius: palette.blurRadius
+                    blurSource: backgroundLayer
+
+                    onVisibilityToggled: togglePasswordVisibility()
+                    onPasswordChanged: {
+                        if (loginFailed) {
+                            clearError()
+                        }
+                        updatePasswordMask()
                     }
-                    updatePasswordMask()
+                    onPasswordAccepted: attemptLogin()
+                    onPasswordCleared: {
+                        resetPasswordMaskCache()
+                        updatePasswordMask()
+                    }
                 }
-                onPasswordAccepted: attemptLogin()
-                onPasswordCleared: {
-                    resetPasswordMaskCache()
-                    updatePasswordMask()
+
+                Text {
+                    id: errorMessage
+                    width: parent.width
+                    visible: loginFailed && loginErrorMessage.length > 0
+                    text: loginErrorMessage
+                    color: errorColor
+                    font.family: fontFamily
+                    font.pixelSize: baseFontSize - 1
+                    horizontalAlignment: Text.AlignLeft
+                    wrapMode: Text.WordWrap
+                    opacity: visible ? 1 : 0
+
+                    Behavior on opacity { NumberAnimation { duration: animationDuration } }
                 }
-            }
 
-            Text {
-                id: errorMessage
-                width: parent.width
-                visible: loginFailed && loginErrorMessage.length > 0
-                text: loginErrorMessage
-                color: errorColor
-                font.family: fontFamily
-                font.pixelSize: baseFontSize - 1
-                horizontalAlignment: Text.AlignHCenter
-                wrapMode: Text.WordWrap
-                opacity: visible ? 1 : 0
-
-                Behavior on opacity { NumberAnimation { duration: animationDuration } }
-            }
-
-            SessionSelector {
-                id: sessionSelector
-                text: currentSession
-                visible: sessionSelectorVisible
-                width: parent.width
-                height: 40
-                fontFamily: root.fontFamily
-                fontPointSize: root.baseFontSize + 2
-                blurEnabled: palette.blurEnabled
-                blurRadius: palette.blurRadius
-                blurSource: backgroundLayer
-                onPrevClicked: sessionsCycleSelectPrev()
-                onNextClicked: sessionsCycleSelectNext()
+                SessionSelector {
+                    id: sessionSelector
+                    text: currentSession
+                    visible: sessionSelectorVisible
+                    width: parent.width
+                    height: 40
+                    fontFamily: root.fontFamily
+                    fontPointSize: root.baseFontSize + 1
+                    blurEnabled: palette.blurEnabled
+                    blurRadius: palette.blurRadius
+                    blurSource: backgroundLayer
+                    onPrevClicked: sessionsCycleSelectPrev()
+                    onNextClicked: sessionsCycleSelectNext()
+                }
             }
         }
 
@@ -997,7 +1015,7 @@ Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 20
-            spacing: 12
+            spacing: 8
 
             PowerButton {
                 visible: sddm.canSuspend
