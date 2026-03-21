@@ -1,6 +1,6 @@
 # gruvscure-sddm-theme
 
-A flat, square, Gruvbox-dark SDDM spin of [`saatvik333/obscure-sddm-theme`](https://github.com/saatvik333/obscure-sddm-theme).
+A flat, square, Gruvbox-dark inspired SDDM spin of [`saatvik333/obscure-sddm-theme`](https://github.com/saatvik333/obscure-sddm-theme).
 
 This variant removes the rounded dark look in minimal session-manager style:
 
