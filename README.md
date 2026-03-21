@@ -2,13 +2,12 @@
 
 A flat, square, Gruvbox-dark SDDM theme based on [`saatvik333/obscure-sddm-theme`](https://github.com/saatvik333/obscure-sddm-theme).
 
-This variant removes the rounded glass-heavy look in favor of a more minimal session-manager style:
+This variant removes the rounded dark look in minimal session-manager style:
 
 - square controls
 - flat fills with no visible borders
 - Gruvbox dark palette
 - optional wallpaper with solid-color fallback
-- simple password masking by default
 
 ## Requirements
 
@@ -63,18 +62,6 @@ InputMethod=
 EOF
 ```
 
-## Reproducible GitHub Workflow
-
-If this repo started as a local clone of upstream, convert it into your own forked working repo:
-
-```bash
-git remote rename origin upstream
-git remote add origin git@github.com:<your-user>/obscure-gruvbox-boxy-sddm.git
-git push -u origin main
-```
-
-Keep `upstream` only if you want to periodically pull fixes from the original project.
-
 ## Configuration
 
 All user-facing customization lives in `theme.conf`.
@@ -127,7 +114,6 @@ All user-facing customization lives in `theme.conf`.
 
 ## Notes
 
-- The password masking pipeline is still inherited from upstream, but the default config uses simple `*` masking instead of IPA characters.
 - The theme disables password autofocus by default to reduce accidental virtual-keyboard popups on systems that expose one through SDDM.
 - `Theme-Id` is `obscure-gruvbox-boxy`, so the SDDM install directory and `Current=` value should match that exactly.
 
