@@ -1,6 +1,6 @@
-# Obscure Gruvbox Boxy SDDM Theme
+# gruvscure-sddm-theme
 
-A flat, square, Gruvbox-dark SDDM theme based on [`saatvik333/obscure-sddm-theme`](https://github.com/saatvik333/obscure-sddm-theme).
+A flat, square, Gruvbox-dark SDDM spin of [`saatvik333/obscure-sddm-theme`](https://github.com/saatvik333/obscure-sddm-theme).
 
 This variant removes the rounded dark look in minimal session-manager style:
 
@@ -20,8 +20,8 @@ This variant removes the rounded dark look in minimal session-manager style:
 Clone your fork:
 
 ```bash
-git clone https://github.com/<your-user>/obscure-gruvbox-boxy-sddm.git
-cd obscure-gruvbox-boxy-sddm
+git clone https://github.com/SUDOER1337/gruvscure-sddm-theme
+cd gruvscure-sddm-theme
 ```
 
 Preview locally:
@@ -39,8 +39,8 @@ QT_QPA_PLATFORM=offscreen sddm-greeter-qt6 --test-mode --theme "$PWD"
 Install the theme:
 
 ```bash
-sudo mkdir -p /usr/share/sddm/themes/obscure-gruvbox-boxy
-sudo cp -r Main.qml metadata.desktop theme.conf assets /usr/share/sddm/themes/obscure-gruvbox-boxy/
+sudo mkdir -p /usr/share/sddm/themes/gruvscure-sddm-theme
+sudo cp -r Main.qml metadata.desktop theme.conf assets /usr/share/sddm/themes/gruvscure-sddm-theme/
 ```
 
 Activate it:
@@ -49,7 +49,7 @@ Activate it:
 sudo mkdir -p /etc/sddm.conf.d
 sudo tee /etc/sddm.conf.d/10-theme.conf >/dev/null <<'EOF'
 [Theme]
-Current=obscure-gruvbox-boxy
+Current=gruvscure-sddm-theme
 EOF
 ```
 
@@ -115,7 +115,7 @@ All user-facing customization lives in `theme.conf`.
 ## Notes
 
 - The theme disables password autofocus by default to reduce accidental virtual-keyboard popups on systems that expose one through SDDM.
-- `Theme-Id` is `obscure-gruvbox-boxy`, so the SDDM install directory and `Current=` value should match that exactly.
+- `Theme-Id` is `gruvscure-sddm-theme`, so the SDDM install directory and `Current=` value should match that exactly.
 
 ## License
 
