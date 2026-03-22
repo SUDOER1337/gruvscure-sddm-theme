@@ -1,0 +1,12 @@
+[SddmGreeterTheme]
+Name=Obscure Gruvbox Boxy
+Description=Minimal boxy Gruvbox dark SDDM theme based on Obscure
+Website=https://github.com/saatvik333/obscure-sddm-theme
+Author=saatvik333
+Copyright=(c) 2025, saatvik333
+License=MIT
+Version=1.0
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=obscure-gruvbox-boxy
+QtVersion=6

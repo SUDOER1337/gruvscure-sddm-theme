@@ -1,0 +1,9 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = true
+[remote "origin"]
+	url = https://github.com/SUDOER1337/gruvscure-sddm-theme.git
+	tagOpt = --no-tags
+	fetch = +refs/*:refs/*
+	mirror = true
