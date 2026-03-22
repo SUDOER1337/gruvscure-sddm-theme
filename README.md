@@ -34,7 +34,7 @@ sudo mkdir -p /usr/share/sddm/themes/gruvscure-sddm-theme
 sudo cp -r Main.qml metadata.desktop theme.conf assets /usr/share/sddm/themes/gruvscure-sddm-theme/
 ```
 
-Activate it by creating ```sddm.conf.d``` using tee:
+Activate it by creating ```sddm.conf.d``` using tee to set "Current=":
 
 ```bash
 sudo mkdir -p /etc/sddm.conf.d
