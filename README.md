@@ -1,15 +1,10 @@
 # gruvscure-sddm-theme
 
-A flat, square, Gruvbox-dark inspired SDDM spin of [`saatvik333/obscure-sddm-theme`](https://github.com/saatvik333/obscure-sddm-theme).
+A flat, square, Gruvbox-dark inspired spin of [`saatvik333/obscure-sddm-theme`](https://github.com/saatvik333/obscure-sddm-theme).
 
 ![Theme preview](preview.png)
 
-This variant removes the rounded dark look in minimal session-manager style:
-
-- square controls
-- flat fills with no visible borders
-- Gruvbox dark palette
-- optional wallpaper with solid-color fallback
+This variant removes the rounded dark look in minimal session-manager
 
 ## Requirements
 
@@ -26,16 +21,10 @@ git clone https://github.com/SUDOER1337/gruvscure-sddm-theme.git
 cd gruvscure-sddm-theme
 ```
 
-Preview locally:
+Preview locally (must be in the repo folder):
 
 ```bash
 sddm-greeter-qt6 --test-mode --theme "$PWD"
-```
-
-If you are testing without an active display server, validate that the theme loads with:
-
-```bash
-QT_QPA_PLATFORM=offscreen sddm-greeter-qt6 --test-mode --theme "$PWD"
 ```
 
 Install the theme:
@@ -45,7 +34,7 @@ sudo mkdir -p /usr/share/sddm/themes/gruvscure-sddm-theme
 sudo cp -r Main.qml metadata.desktop theme.conf assets /usr/share/sddm/themes/gruvscure-sddm-theme/
 ```
 
-Activate it:
+Activate it by creating ```sddm.conf.d``` using tee:
 
 ```bash
 sudo mkdir -p /etc/sddm.conf.d
