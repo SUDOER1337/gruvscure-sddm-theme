@@ -322,6 +322,9 @@ Rectangle {
     property string loginErrorMessage: ""
     property string passwordMask: ""
     property bool passwordVisible: false
+    property bool isNavigationMode: false
+    property string navTarget: "password"
+    property int powerTargetIndex: 0
 
     property bool showUserSelector: configUtil.boolValue("showUserSelector", false)
     property bool showSessionSelector: configUtil.boolValue("showSessionSelector", false)
@@ -362,6 +365,7 @@ Rectangle {
     readonly property bool isGlassBackgroundActive: backgroundGlassEnabled && backgroundGlassRadius > 0
 
     anchors.fill: parent
+    focus: true
 
     // ---------------------------------------------------------------------
     // Background
@@ -587,9 +591,9 @@ Rectangle {
                 onAccepted: passwordFieldRoot.passwordAccepted()
                 onTextChanged: passwordFieldRoot.passwordChanged()
 
-                Keys.onEscapePressed: {
-                    clear()
-                    passwordFieldRoot.passwordCleared()
+                Keys.onEscapePressed: function(event) {
+                    root.enterNavigationMode("password")
+                    event.accepted = true
                 }
             }
 
@@ -653,7 +657,7 @@ Rectangle {
                 hoverEnabled: true
                 acceptedButtons: Qt.LeftButton
                 cursorShape: Qt.IBeamCursor
-                onClicked: passwordInput.forceActiveFocus()
+                onClicked: root.exitNavigationModeToPassword()
                 z: 0
             }
         }
@@ -1018,6 +1022,7 @@ Rectangle {
             spacing: 8
 
             PowerButton {
+                id: suspendPowerButton
                 visible: sddm.canSuspend
                 iconSource: "./assets/suspend.svg"
                 tooltip: "Suspend"
@@ -1028,6 +1033,7 @@ Rectangle {
             }
 
             PowerButton {
+                id: rebootPowerButton
                 visible: sddm.canReboot
                 iconSource: "./assets/reboot.svg"
                 tooltip: "Reboot"
@@ -1038,6 +1044,7 @@ Rectangle {
             }
 
             PowerButton {
+                id: shutdownPowerButton
                 visible: sddm.canPowerOff
                 iconSource: "./assets/shutdown.svg"
                 tooltip: "Shutdown"
@@ -1054,7 +1061,7 @@ Rectangle {
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.margins: 20
-            text: "F1: Toggle help • F2: Users • F3: Sessions • F10: Suspend • F11: Shutdown • F12: Reboot"
+            text: "Esc: Nav mode • /: Password • h/l: Move • j/k: Cycle • Enter: Activate • F1: Toggle help • F2: Users • F3: Sessions • F10: Suspend • F11: Shutdown • F12: Reboot"
             color: Qt.rgba(textColor.r, textColor.g, textColor.b, 0.7)
             font.family: fontFamily
             font.pixelSize: baseFontSize - 2
@@ -1100,6 +1107,48 @@ Rectangle {
         onActivated: sessionsCycleSelectPrev()
     }
 
+    Shortcut {
+        sequence: "H"
+        context: Qt.ApplicationShortcut
+        enabled: isNavigationMode
+        onActivated: moveNavTarget(-1)
+    }
+
+    Shortcut {
+        sequence: "L"
+        context: Qt.ApplicationShortcut
+        enabled: isNavigationMode
+        onActivated: moveNavTarget(1)
+    }
+
+    Shortcut {
+        sequence: "J"
+        context: Qt.ApplicationShortcut
+        enabled: isNavigationMode
+        onActivated: cycleNavTarget(1)
+    }
+
+    Shortcut {
+        sequence: "K"
+        context: Qt.ApplicationShortcut
+        enabled: isNavigationMode
+        onActivated: cycleNavTarget(-1)
+    }
+
+    Shortcut {
+        sequences: ["Return", "Enter"]
+        context: Qt.ApplicationShortcut
+        enabled: isNavigationMode
+        onActivated: activateNavTarget()
+    }
+
+    Shortcut {
+        sequence: "/"
+        context: Qt.ApplicationShortcut
+        enabled: isNavigationMode
+        onActivated: exitNavigationModeToPassword()
+    }
+
     Shortcut { sequence: "F10"; onActivated: if (sddm.canSuspend) sddm.suspend() }
     Shortcut { sequence: "F11"; onActivated: if (sddm.canPowerOff) sddm.powerOff() }
     Shortcut { sequence: "F12"; onActivated: if (sddm.canReboot) sddm.reboot() }
@@ -1118,6 +1167,7 @@ Rectangle {
     // ---------------------------------------------------------------------
     Component.onCompleted: {
         validateConfiguration()
+        ensureValidNavigationState()
         updatePasswordMask()
         if (autoFocusPassword) {
             passwordInput.forceActiveFocus()
@@ -1159,6 +1209,35 @@ Rectangle {
             return size - 1
         }
         return index
+    }
+
+    function visiblePowerButtons() {
+        var buttons = []
+        if (suspendPowerButton.visible) {
+            buttons.push(suspendPowerButton)
+        }
+        if (rebootPowerButton.visible) {
+            buttons.push(rebootPowerButton)
+        }
+        if (shutdownPowerButton.visible) {
+            buttons.push(shutdownPowerButton)
+        }
+        return buttons
+    }
+
+    function visibleNavTargets() {
+        var targets = []
+        if (userSelectorVisible) {
+            targets.push("user")
+        }
+        targets.push("password")
+        if (sessionSelectorVisible) {
+            targets.push("session")
+        }
+        if (visiblePowerButtons().length > 0) {
+            targets.push("power")
+        }
+        return targets
     }
 
     function getCurrentUsername() {
@@ -1208,6 +1287,161 @@ Rectangle {
     // ---------------------------------------------------------------------
     // Navigation
     // ---------------------------------------------------------------------
+    function ensureValidNavigationState() {
+        const targets = visibleNavTargets()
+        const passwordIndex = targets.indexOf("password")
+
+        if (targets.length === 0) {
+            navTarget = "password"
+            powerTargetIndex = 0
+            return
+        }
+
+        if (targets.indexOf(navTarget) === -1) {
+            navTarget = passwordIndex >= 0 ? "password" : targets[0]
+        }
+
+        const powerButtons = visiblePowerButtons()
+        if (powerButtons.length === 0) {
+            powerTargetIndex = 0
+            if (navTarget === "power") {
+                navTarget = passwordIndex >= 0 ? "password" : targets[0]
+            }
+            return
+        }
+
+        powerTargetIndex = clampIndex(powerTargetIndex, powerButtons.length)
+    }
+
+    function setPowerTargetForDirection(direction) {
+        const powerButtons = visiblePowerButtons()
+        if (powerButtons.length === 0) {
+            powerTargetIndex = 0
+            return
+        }
+        powerTargetIndex = direction < 0 ? powerButtons.length - 1 : 0
+    }
+
+    function enterNavigationMode(preferredTarget) {
+        isNavigationMode = true
+        if (typeof preferredTarget === "string" && preferredTarget.length > 0) {
+            navTarget = preferredTarget
+        }
+        ensureValidNavigationState()
+        root.forceActiveFocus()
+    }
+
+    function exitNavigationModeToPassword() {
+        isNavigationMode = false
+        navTarget = "password"
+        ensureValidNavigationState()
+        passwordInput.forceActiveFocus()
+    }
+
+    function moveNavTarget(direction) {
+        if (!isNavigationMode) {
+            return
+        }
+
+        ensureValidNavigationState()
+
+        const targets = visibleNavTargets()
+        if (targets.length === 0) {
+            return
+        }
+
+        if (navTarget === "power") {
+            const powerButtons = visiblePowerButtons()
+            const nextPowerIndex = powerTargetIndex + direction
+            if (nextPowerIndex >= 0 && nextPowerIndex < powerButtons.length) {
+                powerTargetIndex = nextPowerIndex
+                return
+            }
+        }
+
+        const currentIndex = targets.indexOf(navTarget)
+        const baseIndex = currentIndex >= 0 ? currentIndex : Math.max(0, targets.indexOf("password"))
+        var nextIndex = baseIndex + direction
+
+        if (nextIndex < 0) {
+            nextIndex = targets.length - 1
+        } else if (nextIndex >= targets.length) {
+            nextIndex = 0
+        }
+
+        navTarget = targets[nextIndex]
+        if (navTarget === "power") {
+            setPowerTargetForDirection(direction)
+        }
+    }
+
+    function cycleNavTarget(direction) {
+        if (!isNavigationMode) {
+            return
+        }
+
+        switch (navTarget) {
+        case "user":
+            cycleUser(direction)
+            break
+        case "session":
+            if (direction > 0) {
+                sessionsCycleSelectNext()
+            } else {
+                sessionsCycleSelectPrev()
+            }
+            break
+        default:
+            break
+        }
+    }
+
+    function activateSelectedPowerButton() {
+        const powerButtons = visiblePowerButtons()
+        if (powerButtons.length === 0) {
+            return
+        }
+
+        const button = powerButtons[clampIndex(powerTargetIndex, powerButtons.length)]
+        if (button === suspendPowerButton) {
+            sddm.suspend()
+            return
+        }
+        if (button === rebootPowerButton) {
+            sddm.reboot()
+            return
+        }
+        if (button === shutdownPowerButton) {
+            sddm.powerOff()
+        }
+    }
+
+    function activateNavTarget() {
+        if (!isNavigationMode) {
+            return
+        }
+
+        ensureValidNavigationState()
+
+        switch (navTarget) {
+        case "password":
+            exitNavigationModeToPassword()
+            attemptLogin()
+            break
+        case "user":
+            cycleUser(1)
+            break
+        case "session":
+            sessionsCycleSelectNext()
+            break
+        case "power":
+            activateSelectedPowerButton()
+            break
+        default:
+            break
+        }
+    }
+
     function cycleUser(direction) {
         if (!hasMultipleUsers) return
         const count = userCount()
@@ -1236,6 +1470,7 @@ Rectangle {
             return
         }
         showUserSelector = !showUserSelector
+        ensureValidNavigationState()
     }
 
     function toggleSessionSelector() {
@@ -1243,6 +1478,7 @@ Rectangle {
             return
         }
         showSessionSelector = !showSessionSelector
+        ensureValidNavigationState()
     }
 
     // ---------------------------------------------------------------------
@@ -1278,6 +1514,8 @@ Rectangle {
     function handleLoginFailed() {
         if (!isLoginInProgress) return
         isLoginInProgress = false
+        isNavigationMode = false
+        navTarget = "password"
         passwordInput.clear()
         passwordVisible = false
         resetPasswordMaskCache()
@@ -1291,6 +1529,8 @@ Rectangle {
 
     function handleLoginSucceeded() {
         isLoginInProgress = false
+        isNavigationMode = false
+        navTarget = "password"
         setLoginError("")
         passwordVisible = false
         passwordErrorFlash.stop()
@@ -1323,11 +1563,13 @@ Rectangle {
     function ensureValidUserIndex() {
         const count = userCount()
         currentUserIndex = count === 0 ? 0 : clampIndex(currentUserIndex, count)
+        ensureValidNavigationState()
     }
 
     function ensureValidSessionIndex() {
         const sessions = sessionCount()
         currentSessionsIndex = sessions === 0 ? 0 : clampIndex(currentSessionsIndex, sessions)
+        ensureValidNavigationState()
     }
 
     // ---------------------------------------------------------------------

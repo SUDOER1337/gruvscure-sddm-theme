@@ -95,7 +95,7 @@ All user-facing customization lives in `theme.conf`.
 | `controlCornerRadius` | Corner radius for controls and panel | `0` |
 | `showUserSelector` | Show user selector carousel | `false` |
 | `showSessionSelector` | Show session selector | `true` |
-| `autoFocusPassword` | Focus password field on load | `false` |
+| `autoFocusPassword` | Focus password field on load | `true` |
 | `useIpaMask` | Use upstream IPA masking mode | `false` |
 | `simpleMaskChar` | Mask character when IPA masking is off | `*` |
 | `randomizePasswordMask` | Randomize IPA masking output | `false` |
@@ -114,7 +114,7 @@ All user-facing customization lives in `theme.conf`.
 
 ## Notes
 
-- The theme disables password autofocus by default to reduce accidental virtual-keyboard popups on systems that expose one through SDDM.
+- The theme enables password autofocus by default so typing can begin immediately on the login screen.
 - `Theme-Id` is `gruvscure-sddm-theme`, so the SDDM install directory and `Current=` value should match that exactly.
 
 ## License
